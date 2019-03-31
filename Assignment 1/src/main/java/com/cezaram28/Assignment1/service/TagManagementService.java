@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,8 +29,21 @@ public class TagManagementService {
     }
 
     @Transactional
-    public List<Tag> listTags() {return repositoryFactory.createTagRepository().findAll();}
+    public List<Tag> listTags() {
+        List<Tag> tags = repositoryFactory.createTagRepository().findAll();
+        if(tags.isEmpty()) throw new TagNotFoundException();
+        return tags;
+    }
 
     @Transactional
-    public Optional<Tag> findById(int id) { return repositoryFactory.createTagRepository().findById(id);}
+    public ArrayList<Tag> addTags(String[] t) {
+        ArrayList<Tag> tags = new ArrayList<Tag>();
+        for (int i = 0; i < t.length; i++)
+            tags.add(new Tag(null, t[i].trim()));
+        tags.forEach(tag -> tag.setId(addTag(tag).getId()));
+        return tags;
+    }
+
+    @Transactional
+    public Tag findById(int id) { return repositoryFactory.createTagRepository().findById(id).orElseThrow(TagNotFoundException::new);}
 }

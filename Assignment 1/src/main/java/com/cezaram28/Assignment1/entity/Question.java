@@ -2,13 +2,16 @@ package com.cezaram28.Assignment1.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 
 @Data
-//@Entity
+@Entity
+@NoArgsConstructor
 @AllArgsConstructor
 public class Question {
     @Id
@@ -16,15 +19,17 @@ public class Question {
     private Integer id;
     private String title;
 
-    //@ManyToOne
-    //@JoinColumn
+    @ManyToOne
+    @JoinColumn(name = "author_id", referencedColumnName = "id")
     private User author;
+
     private String text;
     private Timestamp creationDate;
     private Integer voteCount;
 
-    //@OneToMany
-    private ArrayList<Tag> tags;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "question_tags", joinColumns = @JoinColumn(name = "question_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private List<Tag> tags;
 
     public Question(String title, User author, String text){
         this.title = title;

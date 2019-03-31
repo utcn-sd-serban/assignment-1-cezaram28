@@ -23,10 +23,12 @@ public class JdbcTagRepository implements TagRepository {
 
     @Override
     public Tag save(Tag tag) {
-        if (tag.getId() == null) {
+        List<Tag> t = template.query("SELECT * FROM tag WHERE name=?", ((resultSet, i) -> new Tag(resultSet.getInt("id"), resultSet.getString("name"))), tag.getName());
+        if (t.isEmpty()) {
             tag.setId(insert(tag));
         } else {
-            update(tag);
+            //tag already exists
+            return t.get(0);
         }
         return tag;
     }

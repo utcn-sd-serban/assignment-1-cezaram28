@@ -39,7 +39,7 @@ public class UserManagementServiceUnitTest {
     public void testFindByCredentials(){
         RepositoryFactory factory = createMockedFactory();
         UserManagementService service = new UserManagementService(factory);
-        User user = service.findByCredentials("user1", "pass1").get();
+        User user = service.findByCredentials("user1", "pass1");
         Assert.assertEquals("user1", user.getUsername());
         Assert.assertEquals("pass1", user.getPassword());
 

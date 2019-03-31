@@ -1,9 +1,7 @@
 package com.cezaram28.Assignment1.controller;
 
 import com.cezaram28.Assignment1.entity.*;
-import com.cezaram28.Assignment1.exception.AnswerNotFoundException;
-import com.cezaram28.Assignment1.exception.QuestionNotFoundException;
-import com.cezaram28.Assignment1.exception.UserNotFoundException;
+import com.cezaram28.Assignment1.exception.*;
 import com.cezaram28.Assignment1.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -30,18 +28,41 @@ public class ConsoleController implements CommandLineRunner {
         while (!done) {
             print("Enter a command: ");
             String command = scanner.next().trim();
-            try {
-                done = handleCommand(command);
-            } catch(RuntimeException e){
-                e.printStackTrace();
+            if(user==null && ! command.equals("login") && ! command.equals("addUser") && ! command.equals("exit")) {
+                print("Please log in");
+                done = false;
+            } else {
+
+                try {
+                    done = handleCommand(command);
+                } catch(AnswerNotFoundException e) {
+                    print("No answer found!");
+                } catch(QuestionNotFoundException e) {
+                    print("No question found!");
+                } catch(TagNotFoundException e) {
+                    print("No tag found!");
+                } catch(UserNotFoundException e) {
+                    print("No user found!");
+                } catch(BannedUserException e) {
+                    print("User banned indefinitely!");
+                } catch(NoAdminException e) {
+                    print("You do not have the right to do this!");
+                } catch(BadCredentialsException e) {
+                    print("Wrong username/password!");
+                } catch(UserExistsException e) {
+                    print("User already exists!");
+                } catch(VoteNotFoundException e) {
+                    print("No vote found!");
+                } catch(YourPostException e) {
+                    print("You can't vote your own posts!");
+                } catch(UpvotedException e) {
+                    print("Already upvoted this!");
+                } catch(DownvotedException e) {
+                    print("Already downvoted this!");
+                } catch(RuntimeException e){
+                    e.printStackTrace();
+                }
             }
-//            } catch (UserNotFoundException userNotFoundException) {
-//                print("The user was not found");
-//            } catch (QuestionNotFoundException questionNotFoundException) {
-//                print("The question was not found");
-//            } catch (AnswerNotFoundException answerNotFoundException) {
-//                print("The answer was not found");
-//            }
         }
     }
 
@@ -135,13 +156,7 @@ public class ConsoleController implements CommandLineRunner {
         String username = scanner.next().trim();
         print("Password:");
         String password = scanner.next().trim();
-        Optional<User> user = userManagementService.findByCredentials(username,password);
-        if(user.isPresent()){
-            if(user.get().getIsBanned())
-                print("You are banned indefinitely");
-            else
-                this.user = user.get();
-        } else print("Bad credentials!");
+        user = userManagementService.findByCredentials(username,password);
     }
 
     private void logout(){
@@ -150,524 +165,196 @@ public class ConsoleController implements CommandLineRunner {
     }
 
     private void handleListUsers() {
-        if(user==null) print("Please log in");
-        else
         userManagementService.listUsers().forEach(u->print(u.toString()));
     }
 
     private void handleListQuestions() {
-        if(user==null) print("Please log in");
-        else {
-            List<Question> questions = questionManagementService.listQuestions();
-            questions.sort((q1,q2)->q1.getCreationDate().after(q2.getCreationDate())?-1:1);
-            questions.forEach(question -> print(question.toString()));
-        }
+        List<Question> questions = questionManagementService.listQuestions();
+        questions.forEach(question -> print(question.toString()));
     }
 
     private void handleListQuestionId(){
-        if(user==null) print("Please log in");
-        else {
-            print("Question id:");
-            int id = scanner.nextInt();
 
-            Optional<Question> question = questionManagementService.findById(id);
-            if(question.isPresent()){
+        print("Question id:");
+        int id = scanner.nextInt();
+        Question question = questionManagementService.findById(id);
+        print(question.toString());
+        List<Answer> answers = answerManagementService.listAllToQuestion(id);
+        answers.forEach(answer ->  print(answer.toString()));
 
-                print(question.get().toString());
-                List<Answer> answers = answerManagementService.listAllToQuestion(id).get();
-                if(answers.isEmpty()){
-                    print("No answers");
-                } else {
-                    answers.sort((a1, a2) -> a1.getVoteCount() >= a2.getVoteCount() ? -1 :1 );
-                    answers.forEach(answer ->  print(answer.toString()));
-                }
-
-            } else {
-                print("Question not found!");
-            }
-        }
     }
 
     private void handleListQuestionsUser() {
-        if (user == null) print("Please log in");
-        else {
-            int userId = scanner.nextInt();
-            List<Question> questions = questionManagementService.listAllByUser(userId).get();
-            questions.sort((q1,q2)->q1.getCreationDate().after(q2.getCreationDate())?-1:1);
-            questions.forEach(question -> print(question.toString()));
-        }
+        print("User id:");
+        int userId = scanner.nextInt();
+        List<Question> questions = questionManagementService.listAllByUser(userId);
+        questions.forEach(question -> print(question.toString()));
     }
 
     private void handleListAnswers() {
-        if(user==null) print("Please log in");
-        else{
-            List<Answer> answers = answerManagementService.listAnswers();
-            answers.sort((a1, a2) -> a1.getVoteCount() >= a2.getVoteCount() ? -1 : 1);
-            answers.forEach(answer -> print(answer.toString()));
-        }
+        List<Answer> answers = answerManagementService.listAnswers();
+        answers.forEach(answer -> print(answer.toString()));
     }
 
     private void handleListAnswersUser() {
-        if(user==null) print("Please log in");
-        else{
+        print("User id:");
         int userId = scanner.nextInt();
-            List<Answer> answers = answerManagementService.listAllByUser(userId).get();
-            answers.sort((a1, a2) -> a1.getVoteCount() >= a2.getVoteCount() ? -1 : 1);
-            answers.forEach(answer -> print(answer.toString()));
-        }
+        List<Answer> answers = answerManagementService.listAllByUser(userId);
+        answers.forEach(answer -> print(answer.toString()));
     }
 
     private void handleListAnswersQuestion() {
-        if(user==null) print("Please log in");
-        else{
-            print("Question Id");
-            int questionId = scanner.nextInt();
-            List<Answer> answers = answerManagementService.listAllToQuestion(questionId).get();
-            answers.sort((a1, a2) -> a1.getVoteCount() >= a2.getVoteCount() ? -1 : 1);
-            answers.forEach(answer -> print(answer.toString()));
-        }
+        print("Question Id");
+        int questionId = scanner.nextInt();
+        List<Answer> answers = answerManagementService.listAllToQuestion(questionId);
+        answers.forEach(answer -> print(answer.toString()));
     }
 
     private void handleAddUser() {
+        this.user = null;
         print("Username:");
         String username = scanner.next().trim();
         print("Email:");
         String email = scanner.next().trim();
         print("Password:");
         String password = scanner.next().trim();
-        List<User> users = userManagementService.listUsers();
-        for(User u : users) {
-            if(u.getUsername().equals(username) || u.getEmail().equals(email)){
-                print("User already exists");
-                return;
-            }
-        }
         User user = userManagementService.addUser(username, password, email);
         print("Created user: " + user + ".");
     }
 
     private void handleAddQuestion() {
-        if (user == null) print("Please log in");
-        else {
-            print("Title:");
-            scanner.nextLine();
-            String title = scanner.nextLine().trim();
-            print("Text:");
-            String text = scanner.nextLine().trim();
-            print("Tags:");
-            String[] t = scanner.nextLine().split(", ");
-
-            ArrayList<Tag> tags = new ArrayList<Tag>();
-            for (int i = 0; i < t.length; i++)
-                tags.add(new Tag(null, t[i]));
-
-            tags.forEach(tag -> tagManagementService.addTag(tag));
-            Question question = questionManagementService.addQuestion(new Question(title, this.user, text, tags));
-            print("Created question: " + question + ".");
-        }
+        print("Title:");
+        scanner.nextLine();
+        String title = scanner.nextLine().trim();
+        print("Text:");
+        String text = scanner.nextLine().trim();
+        print("Tags:");
+        ArrayList<Tag> tags = tagManagementService.addTags(scanner.nextLine().split(", "));
+        Question question = questionManagementService.addQuestion(new Question(title, this.user, text, tags));
+        print("Created question: " + question + ".");
     }
 
     private void handleAddAnswer() {
-        if (user == null) print("Please log in");
-        else {
-            print("Question id:");
-            int id = scanner.nextInt();
-            Optional<Question> question = questionManagementService.findById(id);
-            if(question.isPresent()){
-                print("Text:");
-                scanner.nextLine();
-                String text = scanner.nextLine().trim();
-                Answer answer = answerManagementService.addAnswer(new Answer(question.get(),this.user,text));
-                print("Created answer: " + answer + ".");
-            } else {
-                print("Question not found");
-            }
-        }
+        print("Question id:");
+        int id = scanner.nextInt();
+        Question question = questionManagementService.findById(id);
+        print("Text:");
+        scanner.nextLine();
+        String text = scanner.nextLine().trim();
+        Answer answer = answerManagementService.addAnswer(new Answer(question,this.user,text));
+        print("Created answer: " + answer + ".");
     }
 
     private void handleRemoveUser() {
-        if (user == null) print("Please log in");
-        else {
-            print("User id:");
-            int id = scanner.nextInt();
-            Optional<User> user = userManagementService.findById(id);
-            if(user.isPresent()){
-                userManagementService.removeUser(id);
-                print("User removed");
-            }
-            else {
-                print("User not found");
-            }
-        }
+        print("User id:");
+        int id = scanner.nextInt();
+        userManagementService.removeUser(id);
+        print("User removed");
     }
 
     private void handleRemoveQuestion() {
-        if (user == null) print("Please log in");
-        else {
-            print("Question id:");
-            int id = scanner.nextInt();
-            Optional<Question> question = questionManagementService.findById(id);
-            if(question.isPresent()){
-                if(user.getIsAdmin()) {
-                    questionManagementService.removeQuestion(id);
-                    print("Question removed");
-                } else {
-                    print("You do not have the right to do this");
-                }
-            }
-            else {
-                print("Question not found");
-            }
-        }
+        print("Question id:");
+        int id = scanner.nextInt();
+        questionManagementService.removeQuestion(id, user);
+        print("Question removed");
     }
 
     private void handleRemoveAnswer() {
-        if (user == null) print("Please log in");
-        else {
-            print("Answer id:");
-            int id = scanner.nextInt();
-            Optional<Answer> answer = answerManagementService.findById(id);
-            if(answer.isPresent()){
-                if(answer.get().getAuthor().equals(user) || user.getIsAdmin() == true){
-                    answerManagementService.removeAnswer(id);
-                    print("Answer removed");
-                } else {
-                    print("Not your answer");
-                }
-            }
-            else {
-                print("Answer not found");
-            }
-        }
+        print("Answer id:");
+        int id = scanner.nextInt();
+        answerManagementService.removeAnswer(id, user);
+        print("Answer removed");
     }
 
     private void handleEditQuestion() {
-        if (user == null) print("Please log in");
-        else {
-            print("Question id:");
-            int id = scanner.nextInt();
-            //scanner.nextLine();
-            Optional<Question> question = questionManagementService.findById(id);
-            if(question.isPresent()){
-                if(user.getIsAdmin()){
-                    print("New title:");
-                    String title = scanner.nextLine().trim();
-                    print("New text:");
-                    String text = scanner.nextLine().trim();
-                    question.get().setTitle(title);
-                    question.get().setText(text);
-                    questionManagementService.addQuestion(question.get());
-                    print("Question edited");
-                } else {
-                    print("You do not have the right to do this");
-                }
-            }
-            else {
-                print("Question not found");
-            }
-        }
+        print("Question id:");
+        int id = scanner.nextInt();
+        Question question = questionManagementService.findById(id);
+        print("New title:");
+        scanner.nextLine();
+        String title = scanner.nextLine().trim();
+        print("New text:");
+        String text = scanner.nextLine().trim();
+        question.setTitle(title);
+        question.setText(text);
+        questionManagementService.editQuestion(question, user);
+        print("Question edited");
     }
 
     private void handleEditAnswer() {
-        if (user == null) print("Please log in");
-        else {
-            print("Answer id:");
-            int id = scanner.nextInt();
-            //scanner.nextLine();
-            Optional<Answer> answer = answerManagementService.findById(id);
-            if(answer.isPresent()){
-                if(answer.get().getAuthor().equals(user) || user.getIsAdmin()){
-                    print("New text:");
-                    String text = scanner.nextLine().trim();
-                    answer.get().setText(text);
-                    answerManagementService.addAnswer(answer.get());
-                    print("Answer edited");
-                } else {
-                    print("Not your answer");
-                }
-            }
-            else {
-                print("Answer not found");
-            }
-        }
+        print("Answer id:");
+        int id = scanner.nextInt();
+        Answer answer = answerManagementService.findById(id);
+        print("New text:");
+        scanner.nextLine();
+        String text = scanner.nextLine().trim();
+        answer.setText(text);
+        answerManagementService.editAnswer(answer, user);
+        print("Answer edited");
     }
 
     private void handleSearchTitle(){
-        if (user == null) print("Please log in");
-        else {
-            print("Title:");
-            scanner.nextLine();
-            String text = scanner.nextLine().trim();
-            final String splitText = text.split("\n")[0];
 
-            List<Question> questions = questionManagementService.listQuestions().stream().filter(question -> question.getTitle().contains(splitText)).collect(Collectors.toList());
-            questions.sort((q1,q2)->q1.getCreationDate().after(q2.getCreationDate())?-1:1);
-
-            if(questions.isEmpty()){
-                print("No results found");
-            } else {
-                questions.forEach(question -> print(question.toString()));
-            }
-        }
+        print("Title:");
+        scanner.nextLine();
+        String text = scanner.nextLine().trim();
+        List<Question> questions = questionManagementService.getByTitle(text.split("\n")[0]);
+        questions.forEach(question -> print(question.toString()));
     }
 
     private void handleSearchTag(){
-        if (user == null) print("Please log in");
-        else {
-            print("Tag:");
-            scanner.nextLine();
-            String text = scanner.nextLine().trim();
-            text = text.split("\n")[0];
-
-            List<Question> questions = new ArrayList<>();
-            for(Question q : questionManagementService.listQuestions()){
-                for(Tag t : q.getTags()){
-                    if(t.getName().equals(text)){
-                        questions.add(q);
-                    }
-                }
-            }
-            questions.sort((q1,q2)->q1.getCreationDate().after(q2.getCreationDate())?-1:1);
-
-            if(questions.isEmpty()){
-                print("No results found");
-            } else {
-                questions.forEach(question -> print(question.toString()));
-            }
-        }
+        print("Tag:");
+        scanner.nextLine();
+        String text = scanner.nextLine().trim();
+        List<Question> questions = questionManagementService.getByTag(text.split("\n")[0]);
+        questions.forEach(question -> print(question.toString()));
     }
 
     private void handleUpvoteQuestion() {
-        if(user == null) {
-            print("Please log in");
-        } else {
-            print("Question id: ");
-            int id = scanner.nextInt();
+        print("Question id: ");
+        int id = scanner.nextInt();
+        Question question = questionManagementService.findById(id);
+        voteManagementService.upvoteQuestion(question, user);
+        print("Upvoted");
 
-            Optional<Question> question = questionManagementService.findById(id);
-            if(question.isPresent()){
-                if(question.get().getAuthor().getId() == user.getId()){
-                    print("You can't vote your own question");
-                } else {
-                    Vote vote = new Vote(null, "up", question.get(), null, user);
-                    Optional<Vote> v = voteManagementService.findByQuestion(question.get().getId(), user.getId());
-                    if(v.isPresent()){
-                        if(v.get().getType().equals(vote.getType())){
-                            print("Already upvoted");
-                        } else {
-                            // compute score by modifying parameters +7 question author, +2 question
-                            v.get().setType("up");
-                            voteManagementService.save(v.get());
-
-                            question.get().setVoteCount(question.get().getVoteCount() + 2);
-                            questionManagementService.addQuestion(question.get());
-
-                            question.get().getAuthor().setScore(question.get().getAuthor().getScore() + 7);
-                            userManagementService.addUser(question.get().getAuthor());
-                        }
-                    } else {
-                        vote.setType("up");
-                        voteManagementService.save(vote);
-
-                        question.get().setVoteCount(question.get().getVoteCount() + 1);
-                        questionManagementService.addQuestion(question.get());
-
-                        question.get().getAuthor().setScore(question.get().getAuthor().getScore() + 5);
-                        userManagementService.addUser(question.get().getAuthor());
-                    }
-
-                    voteManagementService.save(vote);
-
-                    print("Upvoted");
-                }
-            } else {
-                print("Question not found");
-            }
-        }
     }
 
     private void handleDownvoteQuestion() {
-        if(user == null) {
-            print("Please log in");
-        } else {
-            print("Question id: ");
-            int id = scanner.nextInt();
-
-            Optional<Question> question = questionManagementService.findById(id);
-            if(question.isPresent()){
-                if(question.get().getAuthor().getId() == user.getId()){
-                    print("You can't vote your own question");
-                } else {
-                    Vote vote = new Vote(null, "down", question.get(), null, user);
-                    Optional<Vote> v = voteManagementService.findByQuestion(question.get().getId(), user.getId());
-                    if(v.isPresent()){
-                        if(v.get().getType().equals(vote.getType())){
-                            print("Already downvoted");
-                        } else {
-                            // compute score by modifying parameters -7 question author, -2 question
-                            v.get().setType("down");
-                            voteManagementService.save(v.get());
-
-                            question.get().setVoteCount(question.get().getVoteCount() - 2);
-                            questionManagementService.addQuestion(question.get());
-
-                            question.get().getAuthor().setScore(question.get().getAuthor().getScore() - 7);
-                            userManagementService.addUser(question.get().getAuthor());
-                        }
-                    } else {
-                        vote.setType("down");
-                        voteManagementService.save(vote);
-
-                        question.get().setVoteCount(question.get().getVoteCount() - 1);
-                        questionManagementService.addQuestion(question.get());
-
-                        question.get().getAuthor().setScore(question.get().getAuthor().getScore() - 2);
-                        userManagementService.addUser(question.get().getAuthor());
-                    }
-
-                    voteManagementService.save(vote);
-
-                    print("Downvoted");
-                }
-            } else {
-                print("Question not found");
-            }
-        }
+        print("Question id: ");
+        int id = scanner.nextInt();
+        Question question = questionManagementService.findById(id);
+        voteManagementService.downvoteQuestion(question, user);
+        print("Downvoted");
     }
 
     private void handleUpvoteAnswer() {
-        if(user == null) {
-            print("Please log in");
-        } else {
-            print("Answer id: ");
-            int id = scanner.nextInt();
-
-            Optional<Answer> answer = answerManagementService.findById(id);
-            if(answer.isPresent()){
-                if(answer.get().getAuthor().getId() == user.getId()){
-                    print("You can't vote your own answer");
-                } else {
-                    Vote vote = new Vote(null, "up", null, answer.get(), user);
-                    Optional<Vote> v = voteManagementService.findByAnswer(answer.get().getId(), user.getId());
-                    if(v.isPresent()){
-                        if(v.get().getType().equals(vote.getType())){
-                            print("Already upvoted");
-                        } else {
-                            // compute score by modifying parameters +12 answer author, +1 user, +2 answer
-                            v.get().setType("up");
-                            voteManagementService.save(v.get());
-
-                            answer.get().setVoteCount(answer.get().getVoteCount() + 2);
-                            answerManagementService.addAnswer(answer.get());
-
-                            answer.get().getAuthor().setScore(answer.get().getAuthor().getScore() + 12);
-                            userManagementService.addUser(answer.get().getAuthor());
-
-                            user.setScore(user.getScore() + 1);
-                            userManagementService.addUser(user);
-                        }
-                    } else {
-                        vote.setType("up");
-                        voteManagementService.save(vote);
-
-                        answer.get().setVoteCount(answer.get().getVoteCount() + 1);
-                        answerManagementService.addAnswer(answer.get());
-
-                        answer.get().getAuthor().setScore(answer.get().getAuthor().getScore() + 10);
-                        userManagementService.addUser(answer.get().getAuthor());
-                    }
-
-                    voteManagementService.save(vote);
-
-                    print("Upvoted");
-                }
-            } else {
-                print("Answer not found");
-            }
-        }
+        print("Answer id: ");
+        int id = scanner.nextInt();
+        Answer answer = answerManagementService.findById(id);
+        voteManagementService.upvoteAnswer(answer, user);
+        print("Upvoted");
     }
 
     private void handleDownvoteAnswer() {
-        if(user == null) {
-            print("Please log in");
-        } else {
-            print("Answer id: ");
-            int id = scanner.nextInt();
-
-            Optional<Answer> answer = answerManagementService.findById(id);
-            if(answer.isPresent()){
-                if(answer.get().getAuthor().getId() == user.getId()){
-                    print("You can't vote your own answer");
-                } else {
-                    Vote vote = new Vote(null, "up", null, answer.get(), user);
-                    Optional<Vote> v = voteManagementService.findByAnswer(answer.get().getId(), user.getId());
-                    if (v.isPresent()) {
-                        if (v.get().getType().equals(vote.getType())) {
-                            print("Already downvoted");
-                        } else {
-                            // compute score by modifying parameters -12 answer author, -1 user, -2 answer
-                            v.get().setType("down");
-                            voteManagementService.save(v.get());
-
-                            answer.get().setVoteCount(answer.get().getVoteCount() - 2);
-                            answerManagementService.addAnswer(answer.get());
-
-                            answer.get().getAuthor().setScore(answer.get().getAuthor().getScore() - 12);
-                            userManagementService.addUser(answer.get().getAuthor());
-
-                            user.setScore(user.getScore() - 1);
-                            userManagementService.addUser(user);
-                        }
-                    } else {
-                        vote.setType("down");
-                        voteManagementService.save(vote);
-
-                        answer.get().setVoteCount(answer.get().getVoteCount() - 1);
-                        answerManagementService.addAnswer(answer.get());
-
-                        answer.get().getAuthor().setScore(answer.get().getAuthor().getScore() - 2);
-                        userManagementService.addUser(answer.get().getAuthor());
-
-                        user.setScore(user.getScore() - 1);
-                        userManagementService.addUser(user);
-
-                        voteManagementService.save(vote);
-
-                        print("Downvoted");
-                    }
-                }
-            } else {
-                print("Answer not found");
-            }
-        }
+        print("Answer id: ");
+        int id = scanner.nextInt();
+        Answer answer = answerManagementService.findById(id);
+        voteManagementService.downvoteAnswer(answer, user);
+        print("Downvoted");
     }
 
     private void makeAdmin() {
-        if(user.getIsAdmin()) {
-            print("User id:");
-            int id = scanner.nextInt();
-            Optional<User> u = userManagementService.findById(id);
-            if(u.isPresent()) {
-                u.get().setIsAdmin(true);
-                userManagementService.addUser(u.get());
-            } else {
-                print("User not found");
-            }
-        }
+        print("User id:");
+        int id = scanner.nextInt();
+        User u = userManagementService.ban(id,user);
+        print("User made admin");
     }
 
     private void ban() {
-        if(user.getIsAdmin()) {
-            print("User id:");
-            int id = scanner.nextInt();
-            Optional<User> u = userManagementService.findById(id);
-            if(u.isPresent()) {
-                u.get().setIsBanned(true);
-                userManagementService.addUser(u.get());
-            } else {
-                print("User not found");
-            }
-        }
+        print("User id:");
+        int id = scanner.nextInt();
+        User u = userManagementService.ban(id,user);
+        print("User banned");
     }
 
     private void print(String value) {

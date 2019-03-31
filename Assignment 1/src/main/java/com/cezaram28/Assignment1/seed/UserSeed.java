@@ -22,9 +22,9 @@ public class UserSeed implements CommandLineRunner {
     public void run(String... args) throws Exception {
         UserRepository userRepository = repositoryFactory.createUserRepository();
         if(userRepository.findAll().isEmpty()){
-            userRepository.save(new User(null, "user1", "pass1", "email", 0, true, false));
-            userRepository.save(new User(null, "user2", "pass2", "email", 0, false, false));
-            userRepository.save(new User(null, "user3", "pass3", "email", 0, true, true));
+            userRepository.save(new User(null, "user1", "pass1", "email1", 0, true, false));
+            userRepository.save(new User(null, "user2", "pass2", "email2", 0, false, false));
+            userRepository.save(new User(null, "user3", "pass3", "email3", 0, true, true));
         }
     }
 }

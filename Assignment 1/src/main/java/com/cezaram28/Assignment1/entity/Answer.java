@@ -2,25 +2,28 @@ package com.cezaram28.Assignment1.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Data
-//@Entity
+@Entity
 @AllArgsConstructor
+@NoArgsConstructor
 public class Answer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    //@ManyToOne
-    //@JoinColumn
+    @ManyToOne
+    @JoinColumn(name = "question_id", referencedColumnName = "id")
     private Question question;
 
-    //@ManyToOne
-    //@JoinColumn
+    @ManyToOne
+    @JoinColumn(name = "author_id", referencedColumnName = "id")
     private User author;
+
     private String text;
     private Timestamp creationDate;
     private Integer voteCount;

@@ -24,7 +24,9 @@ public class QuestionManagementServiceUnitTest {
         RepositoryFactory factory = createMockedFactory();
         QuestionManagementService service = new QuestionManagementService(factory);
 
-        service.removeQuestion(1);
+        User user = new User();
+        user.setIsAdmin(true);
+        service.removeQuestion(1, user);
 
         Assert.assertEquals(1, factory.createQuestionRepository().findAll().size());
         Assert.assertTrue(factory.createQuestionRepository().findById(2).isPresent());
@@ -34,14 +36,17 @@ public class QuestionManagementServiceUnitTest {
     public void testRemoveThrowsWithNotExistingId() {
         RepositoryFactory factory = createMockedFactory();
         QuestionManagementService service = new QuestionManagementService(factory);
-        service.removeQuestion(999);
+
+        User user = new User();
+        user.setIsAdmin(true);
+        service.removeQuestion(999, user);
     }
 
     @Test
     public void testFindById(){
         RepositoryFactory factory = createMockedFactory();
         QuestionManagementService service = new QuestionManagementService(factory);
-        Question question = service.findById(1).get();
+        Question question = service.findById(1);
         Assert.assertEquals("need help", question.getTitle());
         Assert.assertEquals("i don't know how to java", question.getText());
 

@@ -67,6 +67,7 @@ public class UserManagementService {
         if(!user.getIsAdmin()) throw new NoAdminException();
         User u = findById(id);
         u.setIsBanned(true);
+        addUser(u);
         return u;
     }
 
@@ -75,6 +76,7 @@ public class UserManagementService {
         if(!user.getIsAdmin()) throw new NoAdminException();
         User u = findById(id);
         u.setIsAdmin(true);
+        addUser(u);
         return u;
     }
 }

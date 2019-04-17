@@ -8,26 +8,20 @@ import com.cezaram28.Assignment1.service.*;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-//@RunWith(SpringRunner.class)
-//@SpringBootTest
+
 public class IntegrationTests {
 
-    //@Autowired
     //private EntityManager entityManager;
     private RepositoryFactory repositoryFactory = new InMemoryRepositoryFactory();
     private UserManagementService userManagementService = new UserManagementService(repositoryFactory);
 
-    @Autowired
-    private QuestionManagementService questionManagementService;
+    private QuestionManagementService questionManagementService = new QuestionManagementService(repositoryFactory);
 
-    @Autowired
-    private AnswerManagementService answerManagementService;
+    private AnswerManagementService answerManagementService = new AnswerManagementService(repositoryFactory);
 
-    @Autowired
-    private TagManagementService tagManagementService;
+    private TagManagementService tagManagementService = new TagManagementService(repositoryFactory);
 
-    @Autowired
-    private VoteManagementService voteManagementService;
+    private VoteManagementService voteManagementService = new VoteManagementService(repositoryFactory, questionManagementService, userManagementService, answerManagementService);
 
     public void createMockedData(){
         if(repositoryFactory.createUserRepository().findAll().isEmpty()){
